@@ -86,6 +86,13 @@ class HanoiVisualization:
                             self.solver.towers[target].push(
                                 self.solver.towers[source].pop())
                             self.current_move += 1
+                    elif event.key == pygame.K_LEFT and not auto_play:
+                        if self.current_move > 0:
+                            self.current_move -= 1
+                            source, target, disk = self.solver.moves[self.current_move]
+                            # Reverse the move: move disk from target back to source
+                            self.solver.towers[source].push(
+                                self.solver.towers[target].pop())
             
             # Auto play logic
             if auto_play and current_time - last_move_time > self.animation_speed:
@@ -103,7 +110,7 @@ class HanoiVisualization:
             
             # Display controls
             controls = self.font.render(
-                "Space: Play/Pause | Right Arrow: Next Move", 
+                "Left: Prev | Right: Next | Space: Play/Pause", 
                 True, (0, 0, 0))
             self.screen.blit(controls, (20, 20))
             
