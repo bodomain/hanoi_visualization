@@ -19,18 +19,18 @@ class HanoiVisualization:
             self.solver.towers['A'].push(size)
         
         # Display settings
-        self.width = 800
-        self.height = 600
+        self.width = 1400
+        self.height = 800
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Towers of Hanoi Visualization")
         
         # Colors
-        self.bg_color = (240, 240, 240)
-        self.tower_color = (100, 100, 100)
+        self.bg_color = (255, 255, 255)
+        self.tower_color = (0, 0, 0)
         self.disk_colors = [
-            (255, 0, 0), (0, 255, 0), (0, 0, 255),
-            (255, 255, 0), (255, 0, 255), (0, 255, 255),
-            (128, 0, 0), (0, 128, 0), (0, 0, 128)
+            (200, 200, 200), (180, 180, 180), (160, 160, 160),
+            (140, 140, 140), (120, 120, 120), (100, 100, 100),
+            (80, 80, 80), (60, 60, 60)
         ]
         
         # Animation control
@@ -38,6 +38,49 @@ class HanoiVisualization:
         self.animation_speed = 500  # ms per move
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont('Arial', 24)
+        self.code_font = pygame.font.SysFont('Courier', 20)
+
+    def draw_code(self):
+        title = self.font.render("Move Function Code", True, (0, 0, 0))
+        self.screen.blit(title, (720, 20))
+        code_font = pygame.font.SysFont('Courier', 16)
+        code_colors = {
+            "keyword": (0, 0, 255),
+            "function": (0, 128, 128),
+            "self": (128, 0, 128),
+            "default": (0, 0, 0)
+        }
+
+        code_lines = [
+            [("def ", "keyword"), ("_move_disks", "function"), ("(self, n, source, target, auxiliary):", "default")],
+            [("    if ", "keyword"), ("n > 0:", "default")],
+            [("        self._move_disks(n-1, source, auxiliary, target)", "default")],
+            [("        disk = self.towers[source].pop()", "default")],
+            [("        self.towers[target].push(disk)", "default")],
+            [("        self.moves.append((source, target, disk))", "default")],
+            [("        self._move_disks(n-1, auxiliary, target, source)", "default")],
+        ]
+        y_offset = 60
+        for line in code_lines:
+            x_offset = 720
+            for text, color_key in line:
+                color = code_colors.get(color_key, code_colors["default"])
+                text_surface = code_font.render(text, True, color)
+                self.screen.blit(text_surface, (x_offset, y_offset))
+                x_offset += text_surface.get_width()
+            y_offset += 20
+
+    def draw_call_stack(self):
+        title = self.font.render("Recursive Call Stack", True, (0, 0, 0))
+        self.screen.blit(title, (720, 220))
+        y_offset = 260
+        if self.current_move < len(self.solver.call_stack_history):
+            for i, call in enumerate(self.solver.call_stack_history[self.current_move]):
+                # Indent based on the call stack depth
+                indentation = "  " * i
+                text = self.code_font.render(indentation + call, True, (0, 0, 0))
+                self.screen.blit(text, (720, y_offset))
+                y_offset += 25
     
     def draw_towers(self):
         # Draw the base
@@ -63,7 +106,8 @@ class HanoiVisualization:
                 color = self.disk_colors[disk-1]
                 pygame.draw.rect(self.screen, color, (x, y, width, 20))
                 # Draw disk size label
-                label = self.font.render(str(disk), True, (255, 255, 255))
+                text_color = (0, 0, 0) if color[0] > 128 else (255, 255, 255)
+                label = self.font.render(str(disk), True, text_color)
                 self.screen.blit(label, (x + width//2 - 5, y + 2))
     
     def run(self):
@@ -107,6 +151,8 @@ class HanoiVisualization:
             self.screen.fill(self.bg_color)
             self.draw_towers()
             self.draw_disks()
+            self.draw_call_stack()
+            self.draw_code()
             
             # Display controls
             controls = self.font.render(
@@ -124,3 +170,4 @@ class HanoiVisualization:
         
         pygame.quit()
         sys.exit()
+

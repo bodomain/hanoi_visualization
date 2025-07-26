@@ -21,11 +21,16 @@ class HanoiSolver:
         # Initialize tower A with disks
         for size in range(num_disks, 0, -1):
             self.towers['A'].push(size)
+        self.call_stack = []
+        self.call_stack_history = []
     
     def solve(self):
         self._move_disks(self.num_disks, 'A', 'C', 'B')
     
     def _move_disks(self, n, source, target, auxiliary):
+        self.call_stack.append(f"move({n}, {source}, {target}, {auxiliary})")
+        self.call_stack_history.append(list(self.call_stack))
+
         if n > 0:
             # Move n-1 disks from source to auxiliary
             self._move_disks(n-1, source, auxiliary, target)
@@ -37,3 +42,5 @@ class HanoiSolver:
             
             # Move the n-1 disks from auxiliary to target
             self._move_disks(n-1, auxiliary, target, source)
+        
+        self.call_stack.pop()
