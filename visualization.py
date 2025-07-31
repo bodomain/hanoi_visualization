@@ -3,8 +3,13 @@ import sys
 from hanoi import HanoiSolver, Tower
 
 class HanoiVisualization:
-    def __init__(self, num_disks=3):
+    def __init__(self, num_disks=None):
         pygame.init()
+        
+        # If no number of disks provided, show input dialog
+        if num_disks is None:
+            num_disks = self.get_disk_input()
+        
         self.num_disks = num_disks
         self.solver = HanoiSolver(num_disks)
         self.solver.solve()
@@ -39,6 +44,98 @@ class HanoiVisualization:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont('Arial', 24)
         self.code_font = pygame.font.SysFont('Courier', 20)
+
+    def get_disk_input(self):
+        """Display a dialog to get the number of disks from the user"""
+        # Create a temporary window for input
+        input_width = 600
+        input_height = 400
+        input_screen = pygame.display.set_mode((input_width, input_height))
+        pygame.display.set_caption("Towers of Hanoi - Setup")
+        
+        font = pygame.font.SysFont('Arial', 32)
+        small_font = pygame.font.SysFont('Arial', 24)
+        
+        selected_disks = 3  # Default value
+        input_active = True
+        
+        while input_active:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        return selected_disks
+                    elif event.key == pygame.K_UP and selected_disks < 8:
+                        selected_disks += 1
+                    elif event.key == pygame.K_DOWN and selected_disks > 1:
+                        selected_disks -= 1
+                    elif event.key >= pygame.K_1 and event.key <= pygame.K_8:
+                        selected_disks = event.key - pygame.K_0
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+                    # Check if clicked on number buttons
+                    for i in range(1, 9):
+                        button_x = 50 + (i-1) * 65
+                        button_y = 200
+                        if button_x <= mouse_x <= button_x + 50 and button_y <= mouse_y <= button_y + 50:
+                            selected_disks = i
+                    
+                    # Check if clicked on OK button
+                    ok_button_x = 250
+                    ok_button_y = 300
+                    if ok_button_x <= mouse_x <= ok_button_x + 100 and ok_button_y <= mouse_y <= ok_button_y + 50:
+                        return selected_disks
+            
+            # Clear screen
+            input_screen.fill((240, 240, 240))
+            
+            # Draw title
+            title_text = font.render("Enter Number of Disks", True, (0, 0, 0))
+            title_rect = title_text.get_rect(center=(input_width//2, 50))
+            input_screen.blit(title_text, title_rect)
+            
+            # Draw instruction
+            instruction_text = small_font.render("Click a number, use arrow keys, or press 1-8", True, (0, 0, 0))
+            instruction_rect = instruction_text.get_rect(center=(input_width//2, 100))
+            input_screen.blit(instruction_text, instruction_rect)
+            
+            # Draw number buttons
+            for i in range(1, 9):
+                button_x = 50 + (i-1) * 65
+                button_y = 200
+                button_color = (100, 150, 255) if i == selected_disks else (200, 200, 200)
+                pygame.draw.rect(input_screen, button_color, (button_x, button_y, 50, 50))
+                pygame.draw.rect(input_screen, (0, 0, 0), (button_x, button_y, 50, 50), 2)
+                
+                number_text = font.render(str(i), True, (0, 0, 0))
+                number_rect = number_text.get_rect(center=(button_x + 25, button_y + 25))
+                input_screen.blit(number_text, number_rect)
+            
+            # Draw selected number display
+            selected_text = font.render(f"Selected: {selected_disks} disks", True, (0, 0, 0))
+            selected_rect = selected_text.get_rect(center=(input_width//2, 150))
+            input_screen.blit(selected_text, selected_rect)
+            
+            # Draw OK button
+            ok_button_x = 250
+            ok_button_y = 300
+            pygame.draw.rect(input_screen, (100, 255, 100), (ok_button_x, ok_button_y, 100, 50))
+            pygame.draw.rect(input_screen, (0, 0, 0), (ok_button_x, ok_button_y, 100, 50), 2)
+            ok_text = font.render("OK", True, (0, 0, 0))
+            ok_rect = ok_text.get_rect(center=(ok_button_x + 50, ok_button_y + 25))
+            input_screen.blit(ok_text, ok_rect)
+            
+            # Draw instructions at bottom
+            enter_text = small_font.render("Press ENTER to start", True, (0, 0, 0))
+            enter_rect = enter_text.get_rect(center=(input_width//2, 370))
+            input_screen.blit(enter_text, enter_rect)
+            
+            pygame.display.flip()
+            pygame.time.Clock().tick(60)
+        
+        return selected_disks
 
     def draw_code(self):
         title = self.font.render("Move Function Code", True, (0, 0, 0))
