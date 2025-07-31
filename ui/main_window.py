@@ -6,6 +6,7 @@ from PySide6.QtGui import QAction, QKeySequence, QIcon
 
 from .hanoi_widget import HanoiWidget
 from .input_dialog import DiskInputDialog
+from .theme_manager import ThemeManager
 
 
 class HanoiMainWindow(QMainWindow):
@@ -14,8 +15,12 @@ class HanoiMainWindow(QMainWindow):
         self.setWindowTitle("Towers of Hanoi Visualization")
         self.setMinimumSize(1000, 700)
         
-        # Load stylesheet
-        self.load_stylesheet()
+        # Initialize theme manager
+        self.theme_manager = ThemeManager()
+        self.theme_manager.theme_changed.connect(self.on_theme_changed)
+        
+        # Apply the current theme
+        self.theme_manager.apply_theme()
         
         # Initialize with default or get from dialog
         self.num_disks = self.get_disk_input()
@@ -137,6 +142,36 @@ class HanoiMainWindow(QMainWindow):
         reset_view_action.setStatusTip("Reset the visualization")
         reset_view_action.triggered.connect(self.reset_animation)
         view_menu.addAction(reset_view_action)
+        
+        view_menu.addSeparator()
+        
+        # Theme submenu
+        theme_menu = view_menu.addMenu("&Theme")
+        
+        light_theme_action = QAction("&Light Theme", self)
+        light_theme_action.setStatusTip("Switch to light theme")
+        light_theme_action.setCheckable(True)
+        light_theme_action.triggered.connect(lambda: self.set_theme(ThemeManager.LIGHT_THEME))
+        theme_menu.addAction(light_theme_action)
+        
+        dark_theme_action = QAction("&Dark Theme", self)
+        dark_theme_action.setStatusTip("Switch to dark theme")
+        dark_theme_action.setCheckable(True)
+        dark_theme_action.triggered.connect(lambda: self.set_theme(ThemeManager.DARK_THEME))
+        theme_menu.addAction(dark_theme_action)
+        
+        # Store theme actions for updating checkmarks
+        self.light_theme_action = light_theme_action
+        self.dark_theme_action = dark_theme_action
+        
+        # Set initial checkmarks
+        self.update_theme_menu_checkmarks()
+        
+        toggle_theme_action = QAction("Toggle &Theme", self)
+        toggle_theme_action.setShortcut("Ctrl+T")
+        toggle_theme_action.setStatusTip("Toggle between light and dark themes")
+        toggle_theme_action.triggered.connect(self.theme_manager.toggle_theme)
+        view_menu.addAction(toggle_theme_action)
         
         # Help menu
         help_menu = menubar.addMenu("&Help")
@@ -261,6 +296,9 @@ class HanoiMainWindow(QMainWindow):
             self.update_play_button()
             self.update_status_bar()
             
+            # Apply theme to new widget
+            self.hanoi_widget.update_theme_colors()
+            
     def show_about(self):
         """Show about dialog"""
         QMessageBox.about(self, "About Towers of Hanoi",
@@ -288,3 +326,23 @@ class HanoiMainWindow(QMainWindow):
         if hasattr(self.hanoi_widget, 'timer'):
             self.hanoi_widget.timer.stop()
         event.accept()
+        
+    def set_theme(self, theme):
+        """Set the application theme"""
+        self.theme_manager.set_theme(theme)
+        
+    def on_theme_changed(self, theme):
+        """Handle theme change"""
+        # Update menu checkmarks
+        self.update_theme_menu_checkmarks()
+        
+        # Update hanoi widget colors
+        if hasattr(self, 'hanoi_widget'):
+            self.hanoi_widget.update_theme_colors()
+            self.hanoi_widget.update()  # Force repaint
+        
+    def update_theme_menu_checkmarks(self):
+        """Update the checkmarks in the theme menu"""
+        current_theme = self.theme_manager.get_current_theme()
+        self.light_theme_action.setChecked(current_theme == ThemeManager.LIGHT_THEME)
+        self.dark_theme_action.setChecked(current_theme == ThemeManager.DARK_THEME)

@@ -32,19 +32,12 @@ class HanoiWidget(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.next_move)
         
-        # Colors
-        self.bg_color = QColor(255, 255, 255)
-        self.tower_color = QColor(0, 0, 0)
-        self.disk_colors = [
-            QColor(255, 100, 100),  # Red
-            QColor(100, 255, 100),  # Green
-            QColor(100, 100, 255),  # Blue
-            QColor(255, 255, 100),  # Yellow
-            QColor(255, 100, 255),  # Magenta
-            QColor(100, 255, 255),  # Cyan
-            QColor(255, 150, 100),  # Orange
-            QColor(150, 100, 255),  # Purple
-        ]
+        # Initialize theme colors (will be set by theme manager)
+        self.bg_color = QColor("#ffffff")
+        self.tower_color = QColor("#000000")
+        self.text_color = QColor("#000000")
+        self.disk_colors = []
+        self.update_theme_colors()
         
         # Fonts
         self.font = QFont('Arial', 12)
@@ -53,6 +46,29 @@ class HanoiWidget(QWidget):
         # Enable mouse tracking for hover effects
         self.setMouseTracking(True)
         
+    def update_theme_colors(self):
+        """Update colors from the theme manager."""
+        if self.parent() and hasattr(self.parent(), 'theme_manager'):
+            colors = self.parent().theme_manager.get_theme_colors()
+            self.bg_color = QColor(colors['background'])
+            self.tower_color = QColor(colors['tower'])
+            self.text_color = QColor(colors['text'])
+            self.disk_colors = [QColor(c) for c in colors['disk_colors']]
+        else:
+            # Default colors for fallback
+            self.bg_color = QColor("#ffffff")
+            self.tower_color = QColor("#000000")
+            self.text_color = QColor("#000000")
+            self.disk_colors = [
+                QColor('#ff6b6b'), QColor('#4ecdc4'), QColor('#45b7d1'),
+                QColor('#f9ca24'), QColor('#f0932b'), QColor('#eb4d4b'),
+                QColor('#6c5ce7'), QColor('#a29bfe')
+            ]
+        
+        # Trigger a repaint
+        if self.isVisible():
+            self.update()
+
     def paintEvent(self, event):
         """Main drawing method"""
         painter = QPainter(self)
@@ -112,6 +128,7 @@ class HanoiWidget(QWidget):
             painter.drawRect(peg_rect)
             
             # Draw tower label
+            painter.setPen(QPen(self.text_color))
             painter.setFont(self.font)
             label = chr(65 + i)  # A, B, C
             painter.drawText(pos - 5, tower_start_y + tower_height + 15, label)
@@ -145,19 +162,19 @@ class HanoiWidget(QWidget):
                 # Draw disk
                 color = self.disk_colors[min(disk - 1, len(self.disk_colors) - 1)]
                 painter.setBrush(QBrush(color))
-                painter.setPen(QPen(QColor(0, 0, 0), 2))
+                painter.setPen(QPen(self.tower_color, 2))
                 
                 disk_rect = QRect(disk_x, disk_y, disk_width, disk_height)
                 painter.drawRoundedRect(disk_rect, 5, 5)
                 
                 # Draw disk number
-                painter.setPen(QPen(QColor(255, 255, 255)))
+                painter.setPen(QPen(self.text_color))
                 painter.setFont(self.font)
                 painter.drawText(disk_rect, Qt.AlignCenter, str(disk))
                 
     def draw_code_panel(self, painter, x, y, width, height):
         """Draw the code visualization panel"""
-        painter.setPen(QPen(QColor(0, 0, 0)))
+        painter.setPen(QPen(self.text_color))
         painter.setFont(QFont('Arial', 14, QFont.Bold))
         painter.drawText(x, y + 20, "Move Function Code")
         
@@ -165,11 +182,11 @@ class HanoiWidget(QWidget):
         code_lines = [
             ("def _move_disks(self, n, source, target, auxiliary):", QColor(0, 0, 255)),
             ("    if n > 0:", QColor(0, 0, 255)),
-            ("        self._move_disks(n-1, source, auxiliary, target)", QColor(0, 0, 0)),
-            ("        disk = self.towers[source].pop()", QColor(0, 0, 0)),
-            ("        self.towers[target].push(disk)", QColor(0, 0, 0)),
-            ("        self.moves.append((source, target, disk))", QColor(0, 0, 0)),
-            ("        self._move_disks(n-1, auxiliary, target, source)", QColor(0, 0, 0)),
+            ("        self._move_disks(n-1, source, auxiliary, target)", self.text_color),
+            ("        disk = self.towers[source].pop()", self.text_color),
+            ("        self.towers[target].push(disk)", self.text_color),
+            ("        self.moves.append((source, target, disk))", self.text_color),
+            ("        self._move_disks(n-1, auxiliary, target, source)", self.text_color),
         ]
         
         painter.setFont(self.code_font)
@@ -181,7 +198,7 @@ class HanoiWidget(QWidget):
             
     def draw_call_stack_panel(self, painter, x, y, width, height):
         """Draw the call stack visualization panel"""
-        painter.setPen(QPen(QColor(0, 0, 0)))
+        painter.setPen(QPen(self.text_color))
         painter.setFont(QFont('Arial', 14, QFont.Bold))
         painter.drawText(x, y + 20, "Recursive Call Stack")
         
@@ -200,7 +217,7 @@ class HanoiWidget(QWidget):
                     
     def draw_controls(self, painter, x, y, width, height):
         """Draw control information"""
-        painter.setPen(QPen(QColor(0, 0, 0)))
+        painter.setPen(QPen(self.text_color))
         painter.setFont(self.font)
         
         controls_text = "← Previous | → Next | Space: Play/Pause"
